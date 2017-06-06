@@ -4,7 +4,9 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <map>
 #include <cmath>
+#include <algorithm>
 #include <cstdlib>
 
 //parser for polar coordinate data exported from RPI CSDT CSnap application
@@ -115,6 +117,24 @@ void readFile(std::ifstream& input, std::vector<float>& radii, std::vector<float
 	}
 }
 
+void orderRadially(std::vector<float>& radii, std::vector<float>& angles) {
+	std::map<float, std::vector<float> > points; //radii as keys, vectors of angles as values
+	for(unsigned int i = 0; i < radii.size(); i++) {
+		points[radii[i]].push_back(angles[i]);
+	}
+	std::vector<float> ordered_radii;
+	std::vector<float> ordered_angles;
+	for(std::map<float, std::vector<float> >::iterator itr = points.begin(); itr != points.end(); itr++) {
+		std::sort(itr->second.begin(), itr->second.end());
+		for(unsigned int j = 0; j < itr->second.size(); j++) {
+			ordered_radii.push_back(itr->first);
+			ordered_angles.push_back(itr->second[j]);
+		}
+	}
+	radii = ordered_radii;
+	angles = ordered_angles;
+}
+
 int main(int argc, char* argv[]) {
 	std::ofstream output_file;
 	std::ifstream input_file;
@@ -131,6 +151,7 @@ int main(int argc, char* argv[]) {
 	roundPoints(radii, angles);
 	removeDuplicates(radii, angles);
 	cutToSize(radii, angles, max_radius);
+	orderRadially(radii, angles);
 	writeToOutput(output_file, radii, angles);
 	std::cout << radii.size() << " points in the pattern." << std::endl;
 };
